@@ -8,7 +8,7 @@
  
  Duration:August to September 2024
 
-Overview of the project:-
+Overview of the project:-Library Management System
 
 Library Management System Overview
           1.Item Types: Books, Magazines, DVDs
