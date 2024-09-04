@@ -1,0 +1,231 @@
+ import java.io.*;
+import java.util.*;
+
+public class LibraryManagementSystem {
+
+    // Item class and subclasses
+    abstract static class Item implements Serializable {
+        private String title;
+        private String author;
+        private String category;
+        private boolean isCheckedOut;
+
+        public Item(String title, String author, String category) {
+            this.title = title;
+            this.author = author;
+            this.category = category;
+            this.isCheckedOut = false;
+        }
+
+        public String getTitle() {
+            return title;
+        }
+
+        public String getAuthor() {
+            return author;
+        }
+
+        public String getCategory() {
+            return category;
+        }
+
+        public boolean isCheckedOut() {
+            return isCheckedOut;
+        }
+
+        public void checkOut() {
+            this.isCheckedOut = true;
+        }
+
+        public void returnItem() {
+            this.isCheckedOut = false;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("%s by %s [%s] %s", title, author, category, isCheckedOut ? "Checked Out" : "Available");
+        }
+    }
+
+    static class Book extends Item {
+        public Book(String title, String author, String category) {
+            super(title, author, category);
+        }
+    }
+
+    static class Magazine extends Item {
+        public Magazine(String title, String author, String category) {
+            super(title, author, category);
+        }
+    }
+
+    static class DVD extends Item {
+        public DVD(String title, String author, String category) {
+            super(title, author, category);
+        }
+    }
+
+    // User class and subclasses
+    abstract static class User implements Serializable {
+        private String name;
+        private String userType; // Librarian or Patron
+
+        public User(String name, String userType) {
+            this.name = name;
+            this.userType = userType;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getUserType() {
+            return userType;
+        }
+    }
+
+    static class Librarian extends User {
+        public Librarian(String name) {
+            super(name, "Librarian");
+        }
+    }
+
+    static class Patron extends User {
+        public Patron(String name) {
+            super(name, "Patron");
+        }
+    }
+
+    // Library management system class
+    private Map<String, Item> items;
+    private Map<String, User> users;
+    private final String FILE_PATH = "library_data.ser";
+
+    public LibraryManagementSystem() {
+        items = new HashMap<>();
+        users = new HashMap<>();
+        loadData();
+    }
+
+    public void addItem(Item item) {
+        items.put(item.getTitle(), item);
+    }
+
+    public void checkOutItem(String title) {
+        Item item = items.get(title);
+        if (item != null && !item.isCheckedOut()) {
+            item.checkOut();
+            System.out.println("Checked out: " + title);
+        } else {
+            System.out.println("Item not available or does not exist.");
+        }
+    }
+
+    public void returnItem(String title) {
+        Item item = items.get(title);
+        if (item != null && item.isCheckedOut()) {
+            item.returnItem();
+            System.out.println("Returned: " + title);
+        } else {
+            System.out.println("Item was not checked out or does not exist.");
+        }
+    }
+
+    public void searchItems(String searchTerm) {
+        System.out.println("Search results:");
+        for (Item item : items.values()) {
+            if (item.getTitle().contains(searchTerm) || item.getAuthor().contains(searchTerm) || item.getCategory().contains(searchTerm)) {
+                System.out.println(item);
+            }
+        }
+    }
+
+    private void saveData() {
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(FILE_PATH))) {
+            oos.writeObject(items);
+            oos.writeObject(users);
+        } catch (IOException e) {
+            System.out.println("Error saving data: " + e.getMessage());
+        }
+    }
+
+    private void loadData() {
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(FILE_PATH))) {
+            items = (Map<String, Item>) ois.readObject();
+            users = (Map<String, User>) ois.readObject();
+        } catch (FileNotFoundException e) {
+            // File not found means first-time use
+        } catch (IOException | ClassNotFoundException e) {
+            System.out.println("Error loading data: " + e.getMessage());
+        }
+    }
+
+    public static void main(String[] args) {
+        LibraryManagementSystem library = new LibraryManagementSystem();
+        Scanner scanner = new Scanner(System.in);
+
+        while (true) {
+            System.out.println("1. Add Item");
+            System.out.println("2. Check Out Item");
+            System.out.println("3. Return Item");
+            System.out.println("4. Search Items");
+            System.out.println("5. Exit");
+            System.out.print("Choose an option: ");
+            int choice = scanner.nextInt();
+            scanner.nextLine(); // Consume newline
+
+            switch (choice) {
+                case 1:
+                    System.out.print("Enter item type (Book/Magazine/DVD): ");
+                    String type = scanner.nextLine();
+                    System.out.print("Enter title: ");
+                    String title = scanner.nextLine();
+                    System.out.print("Enter author: ");
+                    String author = scanner.nextLine();
+                    System.out.print("Enter category: ");
+                    String category = scanner.nextLine();
+                    Item item = null;
+                    switch (type.toLowerCase()) {
+                        case "book":
+                            item = new Book(title, author, category);
+                            break;
+                        case "magazine":
+                            item = new Magazine(title, author, category);
+                            break;
+                        case "dvd":
+                            item = new DVD(title, author, category);
+                            break;
+                        default:
+                            System.out.println("Invalid type.");
+                            break;
+                    }
+                    if (item != null) {
+                        library.addItem(item);
+                        System.out.println("Item added.");
+                    }
+                    break;
+                case 2:
+                    System.out.print("Enter title to check out: ");
+                    title = scanner.nextLine();
+                    library.checkOutItem(title);
+                    break;
+                case 3:
+                    System.out.print("Enter title to return: ");
+                    title = scanner.nextLine();
+                    library.returnItem(title);
+                    break;
+                case 4:
+                    System.out.print("Enter search term: ");
+                    String searchTerm = scanner.nextLine();
+                    library.searchItems(searchTerm);
+                    break;
+                case 5:
+                    library.saveData();
+                    System.out.println("Exiting...");
+                    return;
+                default:
+                    System.out.println("Invalid choice. Please try again.");
+            }
+        }
+    }
+}
